@@ -15,21 +15,35 @@ jobs:
     name: JDK ${{ matrix.java }}, ${{ matrix.os }}, ${{ matrix.transport }} transport, ${{ matrix.tls }} SSL provider
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up JDK
-      uses: actions/setup-java@v4
-      with:
-        distribution: temurin
-        java-version: ${{ matrix.java }}
-    - name: Cache local Maven repository
-      uses: actions/cache@v3
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-
-    - name: Test with Maven
-      env:
-        PUSHY_TEST_TRANSPORT: ${{ matrix.transport }}
-        PUSHY_TEST_SSL_PROVIDER: ${{ matrix.tls }}
-      run: mvn verify -B --file pom.xml
+      - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+      - name: Cache local Maven repository
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      - name: Test with Maven
+        env:
+          PUSHY_TEST_TRANSPORT: ${{ matrix.transport }}
+          PUSHY_TEST_SSL_PROVIDER: ${{ matrix.tls }}
+        run: mvn verify -B --file pom.xml
+        
+      # Run the Test Without NonDex
+      - name: Run Test Without NonDex
+        env:
+          PUSHY_TEST_TRANSPORT: ${{ matrix.transport }}
+          PUSHY_TEST_SSL_PROVIDER: ${{ matrix.tls }}
+        run: mvn verify -B --file pom.xml -Dtest=com.eatthepath.pushy.apns.server.TokenAuthenticationValidatingPushNotificationHandlerTest#testHandleNotificationWithExpirationDate
+
+      # Run the Test With NonDex
+      - name: Run Test With NonDex
+        env:
+          PUSHY_TEST_TRANSPORT: ${{ matrix.transport }}
+          PUSHY_TEST_SSL_PROVIDER: ${{ matrix.tls }}
+        run: java -jar NonDex.jar mvn verify -B --file pom.xml -Dtest=com.eatthepath.pushy.apns.server.TokenAuthenticationValidatingPushNotificationHandlerTest#testHandleNotificationWithExpirationDate
